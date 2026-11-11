@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#11161c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Taller Demo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: app de una columna, móvil primero; barra de acción fija abajo al alcance del pulgar.
+   Botones de 60px+ para usar con guantes o con el nudillo. */
+:root{
+  --bg:#e9edf1; --surface:#ffffff; --surface-2:#f4f6f8; --ink:#11161c; --muted:#56616d; --line:#cfd6dd;
+  --accent:#e9a100; --accent-ink:#1b1400; --ok:#17864a; --warn:#b85c00; --info:#1d5fd1; --danger:#b4361a;
+  --ok-bg:#dff3e7; --warn-bg:#fdebd6; --info-bg:#dfe9fb; --accent-bg:#fbefcf;
+  --font:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#0e1318; --surface:#182029; --surface-2:#202a35; --ink:#eef2f6; --muted:#9aa7b4; --line:#2c3845;
+  --accent:#ffb51f; --accent-ink:#1b1400; --ok:#43c57d; --warn:#f29a3a; --info:#6ea2ff; --danger:#ff7a5c;
+  --ok-bg:#163527; --warn-bg:#3a2714; --info-bg:#172a4a; --accent-bg:#3a2c0b; color-scheme:dark;
+}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:17px;line-height:1.4}
+body{padding-bottom:env(safe-area-inset-bottom,0px);overscroll-behavior-y:none}
+button,input,textarea{font:inherit;color:inherit}
+img{max-width:100%;display:block}
+[hidden]{display:none!important}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main.wrap{padding-block:12px 140px;display:flex;flex-direction:column;gap:18px}
+
+/* Cabecera */
+.top{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;gap:12px;min-height:64px}
+.top h1{font-family:var(--display);font-size:26px;margin:0;letter-spacing:.01em;line-height:1.1}
+.top .sub{font-size:14px;color:var(--muted)}
+.top .grow{flex:1;min-width:0}
+.icon-btn{width:52px;height:52px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn svg{width:26px;height:26px}
+.demo-tag{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--accent);color:var(--accent-ink);padding:3px 8px;border-radius:6px}
+
+/* Secciones */
+.sec h2{font-family:var(--display);font-size:15px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.sec h2 .count{background:var(--surface-2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:0 9px;font-size:14px;letter-spacing:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.empty{color:var(--muted);font-size:15px;padding:14px;border:1px dashed var(--line);border-radius:var(--r);text-align:center}
+
+/* Matrícula española */
+.plate{display:inline-flex;align-items:stretch;border:2px solid #1a1a1a;border-radius:6px;overflow:hidden;background:#fff;color:#111;font-family:var(--display);font-weight:700;line-height:1;flex:none}
+.plate .eu{background:#0b3ea8;color:#fff;font-size:12px;display:flex;align-items:flex-end;justify-content:center;padding:3px 4px;min-width:16px}
+.plate .n{padding:5px 9px;font-size:22px;letter-spacing:.06em;white-space:nowrap}
+.plate.big .n{font-size:30px;padding:6px 12px}
+
+/* Tarjeta coche en el tablero */
+.car{display:flex;gap:12px;align-items:center;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;min-height:76px}
+.car:active{transform:scale(.99)}
+.car .info{flex:1;min-width:0}
+.car .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car .m{font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car .amt{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;font-size:16px}
+.car .amt small{display:block;font-weight:500;color:var(--muted);font-size:13px}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.accent{background:var(--accent-bg);color:var(--ink)}
+.pill.accent::before{background:var(--accent)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.muted{background:var(--surface-2);color:var(--muted)}
+.tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 6px;text-align:center}
+.kpi b{display:block;font-family:var(--display);font-size:28px;line-height:1}
+.kpi span{font-size:12px;color:var(--muted)}
+
+/* Botones */
+.btn{min-height:60px;border-radius:14px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:18px;padding:10px 16px;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;text-decoration:none;color:var(--ink);text-align:center;line-height:1.15}
+.btn svg{width:24px;height:24px;flex:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.btn.wa{background:#1f9e55;border-color:#1f9e55;color:#fff}
+.btn.danger{color:var(--danger)}
+.btn.block{width:100%}
+.btn:focus-visible,.icon-btn:focus-visible,.chip:focus-visible,.seg button:focus-visible,.car:focus-visible{outline:3px solid var(--info);outline-offset:2px}
+.btn:active{filter:brightness(.95)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tpl{min-height:64px;font-size:16px;padding:8px 10px}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--surface) 94%,transparent);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar .wrap{display:flex;gap:10px;padding-block:10px}
+.bar .btn{flex:1}
+
+/* Formularios */
+label.f{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:15px}
+.inp{min-height:58px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);padding:10px 14px;font-size:19px;width:100%}
+.inp:focus{outline:3px solid var(--info);outline-offset:0;border-color:transparent}
+textarea.inp{min-height:96px;resize:vertical}
+.plate-inp{font-family:var(--display);font-size:38px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;text-align:center;background:#fff;color:#111;border:3px solid #1a1a1a;padding-left:46px;background-image:linear-gradient(90deg,#0b3ea8 0 34px,transparent 34px)}
+.hint{font-size:14px;color:var(--muted);min-height:20px}
+.hint.ok{color:var(--ok)}
+.hint.bad{color:var(--warn)}
+.banner{border-radius:12px;padding:12px 14px;font-size:15px;display:flex;gap:10px;align-items:flex-start}
+.banner.ok{background:var(--ok-bg);color:var(--ink)}
+.banner.warn{background:var(--warn-bg);color:var(--ink)}
+.banner.info{background:var(--info-bg);color:var(--ink)}
+.banner b{display:block}
+
+.seg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.seg button{min-height:56px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-weight:700;font-size:15px;cursor:pointer;padding:4px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:48px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-weight:600;font-size:16px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.sug{background:var(--accent-bg);border-color:var(--accent)}
+
+.mic{position:relative}
+.mic.on{background:var(--danger);border-color:var(--danger);color:#fff}
+.mic.on::after{content:"";position:absolute;inset:-5px;border-radius:18px;border:3px solid var(--danger);animation:pulse 1.2s infinite}
+@keyframes pulse{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(1.08)}}
+@media (prefers-reduced-motion:reduce){.mic.on::after{animation:none}}
+
+.photos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ph{aspect-ratio:1;max-width:100%;border-radius:12px;border:2px dashed var(--line);background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;overflow:hidden;position:relative;padding:0}
+.ph svg{width:26px;height:26px}
+.ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ph.has{border-style:solid}
+.ph .lbl{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);color:#fff;font-size:12px;padding:2px}
+.toggle{display:flex;align-items:center;gap:12px;min-height:56px;cursor:pointer;font-weight:600}
+.toggle input{width:28px;height:28px;accent-color:var(--ok)}
+
+/* Líneas de trabajo */
+.lines{display:flex;flex-direction:column}
+.ln{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ln:last-child{border-bottom:0}
+.ln .d{flex:1;min-width:0}
+.ln .d .q{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.ln .p{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ln .x{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer;display:grid;place-items:center;flex:none}
+.ln .x svg{width:18px;height:18px}
+.ln .ex{font-size:11px;font-weight:700;color:var(--warn);text-transform:uppercase;letter-spacing:.06em}
+.tot{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-variant-numeric:tabular-nums;padding-top:10px;border-top:2px solid var(--ink);margin-top:4px}
+.tot .big{font-family:var(--display);font-size:30px;font-weight:700}
+
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.facts div{background:var(--surface-2);border-radius:10px;padding:8px 10px;min-width:0}
+.facts span{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.facts b{font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.timeline li{display:grid;grid-template-columns:56px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.timeline li:last-child{border-bottom:0}
+.timeline time{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600}
+
+/* Vista cliente */
+.phone{background:var(--surface-2);border:1px solid var(--line);border-radius:22px;padding:14px}
+.doc{background:#fff;color:#14181d;border-radius:12px;padding:16px;font-size:15px}
+.doc h3{font-family:var(--display);font-size:22px;margin:0}
+.doc .ln{border-color:#e2e6ea}
+.doc .tot{border-color:#14181d}
+.doc .mut{color:#5c6670}
+.msg{white-space:pre-wrap;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;width:100%;min-height:160px;font-family:var(--font)}
+
+/* Panel inferior */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end}
+.sheet{background:var(--surface);width:100%;border-radius:20px 20px 0 0;padding:18px 0 calc(18px + env(safe-area-inset-bottom,0px))}
+.sheet .wrap{display:flex;flex-direction:column;gap:14px}
+.sheet h3{font-family:var(--display);font-size:24px;margin:0}
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:8px;align-items:center}
+.stepper output{text-align:center;font-family:var(--display);font-size:34px;font-weight:700;font-variant-numeric:tabular-nums}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-weight:600;z-index:60;max-width:calc(100% - 32px);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+details summary{cursor:pointer;list-style:none}
+details summary::-webkit-details-marker{display:none}
+@media (max-width:380px){.kpi b{font-size:24px}.photos{grid-template-columns:repeat(2,1fr)}.plate-inp{font-size:32px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="sheet"></div>
+<div id="toast" class="toast" hidden></div>
+<input type="file" id="cam" accept="image/*" capture="environment" hidden>
+
+<script>
+"use strict";
+/* ---------- Utilidades ---------- */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const KEY = 'taller-demo-v1';
+const H = 3600e3, D = 24 * H;
+const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n || 0);
+const nf = n => new Intl.NumberFormat('es-ES', { maximumFractionDigits: 2 }).format(n || 0);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const hhmm = t => new Date(t).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+const fecha = t => new Date(t).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+const hace = t => { const m = Math.round((Date.now() - t) / 60000); if (m < 1) return 'ahora'; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; return `hace ${Math.round(h / 24)} d`; };
+const IVA = 0.21;
+const FUEL = ['Reserva', '1/4', '1/2', '3/4', 'Lleno'];
+const SINTOMAS = ['Revisión', 'Frenos', 'Ruido', 'Testigo encendido', 'No arranca', 'Pre-ITV', 'Aire acond.', 'Neumáticos', 'Otro'];
+const PLATE_RE = /^\d{4}[BCDFGHJKLMNPRSTVWXYZ]{3}$/;
+const normPlate = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const fmtPlate = p => PLATE_RE.test(p) ? p.slice(0, 4) + ' ' + p.slice(4) : p;
+
+const ICON = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-12.3 7.4L3 21l2.1-5.5A8.4 8.4 0 1 1 21 11.5z"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  wrench: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/></svg>'
+};
+
+/* ---------- Plantillas de trabajos frecuentes ---------- */
+// [tipo, descripción, cantidad (horas si es mano de obra), precio unidad (solo piezas)]
+const PLANTILLAS = [
+  { n: 'Aceite + filtros', k: /aceite|filtro|revisi[oó]n/, l: [['pieza', 'Aceite 5W30 (5 L)', 1, 42], ['pieza', 'Filtro de aceite', 1, 9.5], ['pieza', 'Filtro de aire', 1, 14], ['pieza', 'Filtro de habitáculo', 1, 12], ['mo', 'Mano de obra cambio aceite', 0.8]] },
+  { n: 'Pastillas delanteras', k: /pastilla/, l: [['pieza', 'Juego pastillas delanteras', 1, 48], ['mo', 'Mano de obra pastillas', 0.7]] },
+  { n: 'Discos + pastillas del.', k: /disco/, l: [['pieza', 'Discos delanteros (par)', 1, 86], ['pieza', 'Juego pastillas delanteras', 1, 48], ['mo', 'Mano de obra frenos', 1.5]] },
+  { n: 'Kit distribución', k: /distribuci[oó]n|correa/, l: [['pieza', 'Kit distribución + bomba de agua', 1, 265], ['pieza', 'Anticongelante (5 L)', 1, 18], ['mo', 'Mano de obra distribución', 4]] },
+  { n: 'Batería', k: /bater[ií]a/, l: [['pieza', 'Batería 70 Ah', 1, 105], ['mo', 'Montaje batería', 0.3]] },
+  { n: 'Diagnosis', k: /diagnos|testigo|centralita/, l: [['mo', 'Diagnosis con máquina', 0.5]] },
+  { n: 'Neumáticos (2)', k: /neum[aá]tico|rueda|cubierta/, l: [['pieza', 'Neumático 205/55 R16', 2, 72], ['pieza', 'Válvula y equilibrado', 2, 6], ['mo', 'Montaje neumáticos', 0.5]] },
+  { n: 'Escobillas', k: /escobilla|limpia/, l: [['pieza', 'Escobillas (juego)', 1, 24], ['mo', 'Montaje escobillas', 0.1]] },
+  { n: 'Pre-ITV', k: /itv/, l: [['mo', 'Revisión pre-ITV', 0.5]] },
+  { n: 'Carga aire acond.', k: /aire|climatiz|a\/?c\b/, l: [['pieza', 'Gas refrigerante R1234yf', 1, 60], ['mo', 'Carga y prueba de fugas', 0.7]] }
+];
+function linesFrom(i, tarifa, extra = false) {
+  return PLANTILLAS[i].l.map(([tipo, desc, qty, precio]) => ({
+    id: uid(), tipo, desc, qty, precio: tipo === 'mo' ? tarifa : precio, extra, aprobada: !extra
+  }));
+}
+
+/* ---------- Estado ---------- */
+const ST = {
+  recepcion: { l: 'Recepción', c: 'info' },
+  presupuesto: { l: 'Esperando OK', c: 'warn' },
+  reparacion: { l: 'En reparación', c: 'accent' },
+  listo: { l: 'Listo', c: 'ok' },
+  entregado: { l: 'Entregado', c: 'muted' }
+};
+function seed() {
+  const t = Date.now(), tar = 45;
+  const ev = (...a) => a.map(([dt, txt]) => ({ t: t - dt, txt }));
+  return {
+    cfg: { taller: 'Mi Taller', tarifa: tar },
+    orders: [
+      { id: 'ej1', ejemplo: true, plate: '4821KLM', marca: 'Seat León 1.6 TDI', cliente: 'María López', tel: '', km: 142300, fuel: 2, sintomas: ['Frenos'], nota: 'Chirrían los frenos delanteros al frenar suave.', fotos: {}, piezasFotos: [], sinDanos: true, estado: 'reparacion', creado: t - 3 * H, lines: linesFrom(2, tar),
+        eventos: ev([3 * H, 'Entrada en taller · 142.300 km · depósito 1/2'], [3 * H - 60000, 'Resguardo de depósito generado'], [2.7 * H, 'Presupuesto enviado por WhatsApp'], [2.4 * H, 'Cliente acepta el presupuesto']) },
+      { id: 'ej2', ejemplo: true, plate: '7390HJP', marca: 'Renault Clio 1.5 dCi', cliente: 'Antonio Ruiz', tel: '', km: 188950, fuel: 1, sintomas: ['Testigo encendido'], nota: 'Se enciende el testigo de motor en frío.', fotos: {}, piezasFotos: [], sinDanos: false, estado: 'recepcion', creado: t - 40 * 60000, lines: linesFrom(5, tar),
+        eventos: ev([40 * 60000, 'Entrada en taller · 188.950 km · depósito 1/4'], [40 * 60000 - 60000, 'Resguardo de depósito generado']) },
+      { id: 'ej3', ejemplo: true, plate: '2156MBX', marca: 'Peugeot 308 1.2 PureTech', cliente: 'Laura Gómez', tel: '', km: 61200, fuel: 3, sintomas: ['Revisión'], nota: 'Revisión anual.', fotos: {}, piezasFotos: [], sinDanos: true, estado: 'presupuesto', creado: t - 5 * H, lines: linesFrom(0, tar),
+        eventos: ev([5 * H, 'Entrada en taller · 61.200 km · depósito 3/4'], [5 * H - 60000, 'Resguardo de depósito generado'], [4.5 * H, 'Presupuesto enviado por WhatsApp']) },
+      { id: 'ej4', ejemplo: true, plate: '0987GDT', marca: 'Ford Focus 1.6', cliente: 'Juan Pérez', tel: '', km: 203400, fuel: 0, sintomas: ['No arranca'], nota: 'No arranca por la mañana.', fotos: {}, piezasFotos: [], sinDanos: true, estado: 'listo', creado: t - 26 * H, lines: linesFrom(4, tar),
+        eventos: ev([26 * H, 'Entrada en taller · 203.400 km · depósito reserva'], [25 * H, 'Presupuesto enviado por WhatsApp'], [24.5 * H, 'Cliente acepta el presupuesto'], [1 * H, 'Trabajo terminado']) }
+    ]
+  };
+}
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch (e) { S = seed(); }
+let memOnly = false;
+function save() {
+  if (memOnly) return;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { memOnly = true; toast('Memoria del móvil llena: los datos nuevos no se guardarán al cerrar.'); }
+}
+const ord = id => S.orders.find(o => o.id === id);
+const log = (o, txt) => { o.eventos.push({ t: Date.now(), txt }); };
+function totals(o, soloExtra) {
+  const ls = o.lines.filter(l => soloExtra ? l.extra && !l.aprobada : true);
+  const base = ls.reduce((s, l) => s + l.qty * l.precio, 0);
+  return { ls, base, iva: base * IVA, total: base * (1 + IVA) };
+}
+const pendientes = o => o.lines.filter(l => l.extra && !l.aprobada);
+
+/* ---------- UI comunes ---------- */
+const plate = (p, big) => `<span class="plate${big ? ' big' : ''}"><span class="eu">E</span><span class="n">${esc(fmtPlate(p))}</span></span>`;
+const pill = e => `<span class="pill ${ST[e].c}">${ST[e].l}</span>`;
+let toastT;
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2600); }
+function linesHTML(o, editable, soloExtra) {
+  const { ls, base, iva, total } = totals(o, soloExtra);
+  if (!ls.length) return `<div class="empty">Sin trabajos todavía. Usa una plantilla o dicta una nota.</div>`;
+  return `<div class="lines">${ls.map(l => `
+    <div class="ln">
+      <div class="d"><div>${esc(l.desc)} ${l.extra && !l.aprobada ? '<span class="ex">· extra sin aprobar</span>' : l.extra ? '<span class="ex" style="color:var(--ok)">· extra aprobado</span>' : ''}</div>
+        <div class="q">${l.tipo === 'mo' ? `${nf(l.qty)} h × ${eur(l.precio)}/h` : `${nf(l.qty)} × ${eur(l.precio)}`}</div></div>
+      <div class="p">${eur(l.qty * l.precio)}</div>
+      ${editable ? `<button class="x" data-a="del-line" data-id="${l.id}" aria-label="Quitar ${esc(l.desc)}">${ICON.x}</button>` : ''}
+    </div>`).join('')}</div>
+    <div class="tot"><span class="muted">Base imponible</span><span>${eur(base)}</span>
+      <span class="muted">IVA 21 %</span><span>${eur(iva)}</span>
+      <b>Total</b><span class="big">${eur(total)}</span></div>`;
+}
+
+/* ---------- Router ---------- */
+function route() {
+  const [, v, id, extra] = (location.hash || '#/').split('/');
+  return { v: v || '', id, extra };
+}
+function render() {
+  stopMic();
+  const r = route();
+  if (r.v === 'nuevo') app.innerHTML = viewNuevo();
+  else if (r.v === 'orden' && ord(r.id)) app.innerHTML = viewOrden(ord(r.id));
+  else if (r.v === 'presupuesto' && ord(r.id)) app.innerHTML = viewPresupuesto(ord(r.id), r.extra === 'extra');
+  else if (r.v === 'listo' && ord(r.id)) app.innerHTML = viewAviso(ord(r.id));
+  else if (r.v === 'ajustes') app.innerHTML = viewAjustes();
+  else app.innerHTML = viewTablero();
+  after();
+}
+function go(h) { if (location.hash === h) render(); else location.hash = h; window.scrollTo(0, 0); }
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+
+/* ---------- Vista: tablero ---------- */
+function viewTablero() {
+  const act = ['recepcion', 'presupuesto', 'reparacion', 'listo'];
+  const by = e => S.orders.filter(o => o.estado === e).sort((a, b) => b.creado - a.creado);
+  const card = o => {
+    const t = totals(o).total, p = pendientes(o).length;
+    return `<a class="car" href="#/orden/${o.id}">${plate(o.plate)}
+      <div class="info"><div class="t">${esc(o.marca || 'Vehículo sin datos')}</div>
+      <div class="m">${esc(o.cliente || 'Cliente sin nombre')} · ${hace(o.creado)}</div>
+      <div class="row" style="margin-top:4px;gap:6px">${pill(o.estado)}${p ? '<span class="pill warn">Extra sin OK</span>' : ''}${o.ejemplo ? '<span class="tag">ejemplo</span>' : ''}</div></div>
+      <div class="amt">${t ? eur(t) : '—'}<small>IVA incl.</small></div></a>`;
+  };
+  const entregados = by('entregado');
+  const hoy = new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+  return `
+  <header class="top"><div class="wrap">
+    <div class="grow"><h1>${esc(S.cfg.taller)}</h1><div class="sub">${hoy} <span class="demo-tag">Demo</span></div></div>
+    <a class="icon-btn" href="#/ajustes" aria-label="Ajustes">${ICON.gear}</a>
+  </div></header>
+  <main class="wrap">
+    <div class="kpis">${act.map(e => `<div class="kpi"><b>${by(e).length}</b><span>${ST[e].l}</span></div>`).join('')}</div>
+    ${act.map(e => `<section class="sec"><h2>${ST[e].l} <span class="count">${by(e).length}</span></h2>
+      <div class="stack">${by(e).map(card).join('') || `<div class="empty">Ningún coche aquí</div>`}</div></section>`).join('')}
+    ${entregados.length ? `<section class="sec"><details><summary><h2>Entregados <span class="count">${entregados.length}</span></h2></summary><div class="stack">${entregados.map(card).join('')}</div></details></section>` : ''}
+  </main>
+  <nav class="bar"><div class="wrap"><a class="btn primary block" href="#/nuevo">${ICON.plus} Entrada de coche</a></div></nav>`;
+}
+
+/* ---------- Vista: entrada de coche ---------- */
+let draft = null;
+const newDraft = () => ({ plate: '', marca: '', cliente: '', tel: '', km: '', fuel: null, sintomas: [], nota: '', fotos: {}, fotoMat: null, fotoCuadro: null, sinDanos: false, conocido: false });
+const SLOTS = [['del', 'Delante'], ['tra', 'Detrás'], ['izq', 'Izquierda'], ['der', 'Derecha']];
+function photoSlot(key, label, src) {
+  return `<button type="button" class="ph${src ? ' has' : ''}" data-a="foto" data-k="${key}" aria-label="Foto ${label}">
+    ${src ? `<img src="${src}" alt=""><span class="lbl">${label}</span>` : `${ICON.cam}<span>${label}</span>`}</button>`;
+}
+function viewNuevo() {
+  if (!draft) draft = newDraft();
+  const d = draft;
+  return `
+  <header class="top"><div class="wrap">
+    <a class="icon-btn" href="#/" aria-label="Volver">${ICON.back}</a>
+    <div class="grow"><h1>Entrada de coche</h1><div class="sub">Solo la matrícula es obligatoria</div></div>
+  </div></header>
+  <main class="wrap">
+    <section class="sec"><h2>1 · Matrícula</h2>
+      <div class="stack">
+        <input id="f-plate" class="inp plate-inp" value="${esc(fmtPlate(d.plate))}" placeholder="0000 BBB" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" aria-label="Matrícula">
+        <div id="plate-hint" class="hint">${plateHint(d.plate)}</div>
+        <div id="known">${d.conocido ? knownBanner() : ''}</div>
+        <button class="btn" data-a="foto" data-k="mat">${ICON.cam} ${d.fotoMat ? 'Repetir foto de matrícula' : 'Foto de la matrícula'}</button>
+        ${d.fotoMat ? `<div class="banner info"><img src="${d.fotoMat}" alt="Foto matrícula" style="width:96px;border-radius:8px"><div><b>Foto guardada</b>En la versión real la matrícula se lee sola de la foto.</div></div>` : ''}
+      </div>
+    </section>
+
+    <section class="sec"><h2>2 · Vehículo y cliente</h2>
+      <div class="card stack">
+        <label class="f">Marca y modelo<input id="f-marca" class="inp" value="${esc(d.marca)}" placeholder="Ej. Seat Ibiza 1.0 TSI"></label>
+        <label class="f">Nombre del cliente<input id="f-cliente" class="inp" value="${esc(d.cliente)}" placeholder="Ej. Carmen Sánchez" autocomplete="off"></label>
+        <label class="f">Móvil (para WhatsApp)<input id="f-tel" class="inp" value="${esc(d.tel)}" type="tel" inputmode="tel" placeholder="6XX XXX XXX" autocomplete="off"></label>
+      </div>
+    </section>
+
+    <section class="sec"><h2>3 · Kilómetros y depósito</h2>
+      <div class="card stack">
+        <div class="row" style="flex-wrap:nowrap"><label class="f" style="flex:1"><span>Kilómetros</span><input id="f-km" class="inp" value="${esc(d.km)}" inputmode="numeric" placeholder="Ej. 125000"></label>
+          <button class="icon-btn" style="width:58px;height:58px;align-self:flex-end" data-a="foto" data-k="cuadro" aria-label="Foto del cuadro">${ICON.cam}</button></div>
+        ${d.fotoCuadro ? `<div class="banner info"><img src="${d.fotoCuadro}" alt="Foto del cuadro" style="width:96px;border-radius:8px"><div><b>Foto del cuadro guardada</b>Sirve de prueba de km y combustible a la entrada.</div></div>` : ''}
+        <div class="f" style="font-weight:600;font-size:15px">Combustible</div>
+        <div class="seg">${FUEL.map((f, i) => `<button type="button" data-a="fuel" data-v="${i}" aria-pressed="${d.fuel === i}">${f}</button>`).join('')}</div>
+      </div>
+    </section>
+
+    <section class="sec"><h2>4 · Qué le pasa</h2>
+      <div class="card stack">
+        <div class="chips">${SINTOMAS.map(s => `<button type="button" class="chip" data-a="sint" data-v="${esc(s)}" aria-pressed="${d.sintomas.includes(s)}">${esc(s)}</button>`).join('')}</div>
+        <textarea id="f-nota" class="inp" placeholder="Lo que dice el cliente…">${esc(d.nota)}</textarea>
+        <button class="btn mic" data-a="mic" data-t="f-nota">${ICON.mic} <span>Dictar lo que dice el cliente</span></button>
+      </div>
+    </section>
+
+    <section class="sec"><h2>5 · Estado del coche</h2>
+      <div class="card stack">
+        <div class="photos">${SLOTS.map(([k, l]) => photoSlot(k, l, d.fotos[k])).join('')}</div>
+        <label class="toggle"><input type="checkbox" id="f-sindanos" ${d.sinDanos ? 'checked' : ''}> Sin golpes ni daños visibles</label>
+        <div class="small muted">Las fotos protegen al taller si el cliente reclama un golpe que ya traía.</div>
+      </div>
+    </section>
+  </main>
+  <nav class="bar"><div class="wrap">
+    <a class="btn" href="#/" data-a="cancel-new" style="flex:0 0 34%">Cancelar</a>
+    <button class="btn primary" data-a="crear">${ICON.check} Crear orden</button>
+  </div></nav>`;
+}
+function plateHint(p) {
+  if (!p) return 'Formato actual: 4 números y 3 letras (sin vocales).';
+  if (PLATE_RE.test(p)) return '<span class="hint ok">Matrícula válida</span>';
+  if (p.length < 7) return 'Sigue escribiendo…';
+  return '<span class="hint bad">No es el formato actual. Puedes continuar si es una matrícula antigua.</span>';
+}
+function lastFor(p) { return S.orders.filter(o => o.plate === p).sort((a, b) => b.creado - a.creado)[0]; }
+function knownBanner() {
+  const o = lastFor(draft.plate); if (!o) return '';
+  const n = S.orders.filter(x => x.plate === draft.plate).length;
+  return `<div class="banner ok">${ICON.check}<div><b>Cliente habitual: ${esc(o.cliente || 'sin nombre')}</b>${esc(o.marca)} · ${n} visita${n > 1 ? 's' : ''} · última ${fecha(o.creado)} con ${nf(o.km)} km. Datos rellenados.</div></div>`;
+}
+function onPlateInput(el) {
+  const p = normPlate(el.value);
+  draft.plate = p;
+  $('#plate-hint').innerHTML = plateHint(p);
+  const o = PLATE_RE.test(p) && lastFor(p);
+  if (o && !draft.conocido) {
+    Object.assign(draft, { conocido: true, marca: draft.marca || o.marca, cliente: draft.cliente || o.cliente, tel: draft.tel || o.tel });
+    render();
+    const k = $('#f-km'); if (k) k.focus();
+  } else if (!o && draft.conocido) { draft.conocido = false; $('#known').innerHTML = ''; }
+}
+function crearOrden() {
+  const d = draft;
+  if (!d.plate) { toast('Escribe la matrícula para crear la orden.'); $('#f-plate').focus(); return; }
+  const km = parseInt(String(d.km).replace(/\D/g, ''), 10) || 0;
+  const o = {
+    id: uid(), plate: d.plate, marca: d.marca.trim(), cliente: d.cliente.trim(), tel: d.tel.trim(), km, fuel: d.fuel,
+    sintomas: d.sintomas, nota: d.nota.trim(), fotos: d.fotos, fotoMat: d.fotoMat, fotoCuadro: d.fotoCuadro, piezasFotos: [],
+    sinDanos: d.sinDanos, estado: 'recepcion', creado: Date.now(), lines: [], eventos: []
+  };
+  log(o, `Entrada en taller${km ? ' · ' + nf(km) + ' km' : ''}${d.fuel != null ? ' · depósito ' + FUEL[d.fuel].toLowerCase() : ''}`);
+  const nf_ = Object.keys(d.fotos).length + (d.fotoMat ? 1 : 0) + (d.fotoCuadro ? 1 : 0);
+  if (nf_) log(o, `${nf_} foto${nf_ > 1 ? 's' : ''} de entrada`);
+  log(o, 'Resguardo de depósito generado');
+  // Sugerir plantillas a partir del motivo
+  S.orders.push(o); save(); draft = null;
+  toast('Orden creada');
+  go('#/orden/' + o.id);
+}
+
+/* ---------- Vista: orden de trabajo ---------- */
+function sugerencias(o) {
+  const txt = ((o.nota || '') + ' ' + (o.sintomas || []).join(' ')).toLowerCase();
+  const out = [];
+  PLANTILLAS.forEach((p, i) => { if (p.k.test(txt) && !o.lines.some(l => l.tpl === i)) out.push(`<button class="chip sug" data-a="tpl" data-i="${i}">${ICON.plus.replace('<svg', '<svg width="16" height="16"')} ${esc(p.n)}</button>`); });
+  const h = horasEnTexto(txt);
+  if (h && !o.lines.some(l => l.fromVoz)) out.push(`<button class="chip sug" data-a="horas-voz" data-h="${h}">${ICON.plus.replace('<svg', '<svg width="16" height="16"')} ${nf(h)} h de mano de obra</button>`);
+  return out.length ? `<div class="stack"><div class="small muted">Sugerido a partir de la nota:</div><div class="chips">${out.join('')}</div></div>` : '';
+}
+function horasEnTexto(t) {
+  const words = { una: 1, un: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5, seis: 6 };
+  let m;
+  if (/media hora/.test(t)) return 0.5;
+  if ((m = t.match(/(\d+(?:[.,]\d+)?|una|un|dos|tres|cuatro|cinco|seis)\s*horas?(\s*y\s*media)?/))) {
+    const n = words[m[1]] ?? parseFloat(m[1].replace(',', '.'));
+    return n + (m[2] ? 0.5 : 0);
+  }
+  return 0;
+}
+function viewOrden(o) {
+  const editable = o.estado !== 'entregado';
+  const pend = pendientes(o);
+  const fotos = [...SLOTS.filter(([k]) => o.fotos?.[k]).map(([k, l]) => [o.fotos[k], l]), ...(o.fotoMat ? [[o.fotoMat, 'Matrícula']] : []), ...(o.fotoCuadro ? [[o.fotoCuadro, 'Cuadro']] : []), ...(o.piezasFotos || []).map((s, i) => [s, 'Pieza ' + (i + 1)])];
+  let actions = '';
+  if (o.estado === 'recepcion') actions = `<button class="btn primary" data-a="ir-presu">${ICON.chat} Enviar presupuesto</button>`;
+  if (o.estado === 'presupuesto') actions = `<a class="btn" href="#/presupuesto/${o.id}" style="flex:0 0 38%">Reenviar</a><button class="btn primary" data-a="acepta">${ICON.check} Cliente acepta</button>`;
+  if (o.estado === 'reparacion') actions = pend.length ? `<a class="btn primary" href="#/presupuesto/${o.id}/extra">${ICON.chat} Pedir OK del extra</a>` : `<button class="btn primary" data-a="terminar">${ICON.check} Trabajo terminado</button>`;
+  if (o.estado === 'listo') actions = `<a class="btn" href="#/listo/${o.id}" style="flex:0 0 42%">${ICON.chat} Avisar</a><button class="btn primary" data-a="entregar">${ICON.check} Entregar y cobrar</button>`;
+  if (o.estado === 'entregado') actions = `<a class="btn primary block" href="#/">Volver al tablero</a>`;
+
+  return `
+  <header class="top"><div class="wrap">
+    <a class="icon-btn" href="#/" aria-label="Volver">${ICON.back}</a>
+    <div class="grow row" style="gap:10px;flex-wrap:nowrap">${plate(o.plate)}<div style="min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.marca || 'Vehículo')}</div>${pill(o.estado)}</div></div>
+  </div></header>
+  <main class="wrap">
+    <div class="facts">
+      <div><span>Cliente</span><b>${esc(o.cliente || '—')}</b></div>
+      <div><span>Km</span><b>${o.km ? nf(o.km) : '—'}</b></div>
+      <div><span>Depósito</span><b>${o.fuel != null ? FUEL[o.fuel] : '—'}</b></div>
+    </div>
+
+    ${o.estado === 'entregado' ? entregaResumen(o) : ''}
+    ${pend.length && o.estado === 'reparacion' ? `<div class="banner warn">${ICON.clock}<div><b>Trabajo extra sin aprobar · ${eur(totals(o, true).total)}</b>Pide el OK al cliente antes de montarlo. Queda registrado.</div></div>` : ''}
+
+    <section class="sec"><h2>Motivo y notas</h2>
+      <div class="card stack">
+        ${o.sintomas?.length ? `<div class="chips">${o.sintomas.map(s => `<span class="chip" aria-pressed="true" style="cursor:default">${esc(s)}</span>`).join('')}</div>` : ''}
+        <textarea id="o-nota" class="inp" placeholder="Diagnóstico, lo que has visto…" ${editable ? '' : 'readonly'}>${esc(o.nota)}</textarea>
+        ${editable ? `<button class="btn mic" data-a="mic" data-t="o-nota">${ICON.mic} <span>Dictar diagnóstico</span></button>
+        <div class="small muted">Prueba a decir: «cambio pastillas delanteras y discos, hora y media».</div>` : ''}
+        <div id="sug">${editable ? sugerencias(o) : ''}</div>
+      </div>
+    </section>
+
+    <section class="sec"><h2>Trabajos y piezas</h2>
+      <div class="card stack">${linesHTML(o, editable)}</div>
+    </section>
+
+    ${editable && o.estado !== 'listo' ? `<section class="sec"><h2>Añadir rápido${o.estado === 'reparacion' ? ' · contará como extra' : ''}</h2>
+      <div class="grid2">${PLANTILLAS.map((p, i) => `<button class="btn tpl" data-a="tpl" data-i="${i}">${esc(p.n)}</button>`).join('')}</div>
+      <div class="grid3" style="margin-top:10px">
+        <button class="btn" data-a="sheet-pieza">${ICON.plus} Pieza</button>
+        <button class="btn" data-a="sheet-horas">${ICON.clock} Horas</button>
+        <button class="btn" data-a="foto" data-k="pieza">${ICON.cam} Pieza</button>
+      </div>
+    </section>` : ''}
+
+    ${fotos.length ? `<section class="sec"><h2>Fotos <span class="count">${fotos.length}</span></h2>
+      <div class="photos">${fotos.map(([s, l]) => `<div class="ph has"><img src="${s}" alt="${esc(l)}"><span class="lbl">${esc(l)}</span></div>`).join('')}</div>
+      ${o.sinDanos ? '<div class="small muted" style="margin-top:6px">Marcado a la entrada: sin daños visibles.</div>' : ''}</section>`
+      : `<section class="sec"><h2>Fotos</h2><div class="empty">${o.sinDanos ? 'Sin fotos. Marcado a la entrada: sin daños visibles.' : 'Sin fotos de entrada.'}</div></section>`}
+
+    <section class="sec"><h2>Historial de la orden</h2>
+      <div class="card"><ol class="timeline">${[...o.eventos].reverse().map(e => `<li><time>${hhmm(e.t)}</time><span>${esc(e.txt)}${Date.now() - e.t > 20 * H ? ` <span class="muted small">· ${fecha(e.t)}</span>` : ''}</span></li>`).join('')}</ol></div>
+      <div class="small muted" style="margin-top:6px">Cada dato queda con su hora: sabes qué se apuntó en el momento y qué después.</div>
+    </section>
+  </main>
+  <nav class="bar"><div class="wrap">${actions}</div></nav>`;
+}
+function entregaResumen(o) {
+  const ent = [...o.eventos].reverse().find(e => /Entregado/.test(e.txt))?.t || Date.now();
+  const g = new Date(ent); g.setMonth(g.getMonth() + 3);
+  const r = new Date(ent); r.setFullYear(r.getFullYear() + 1);
+  const n = 'F-' + new Date(ent).getFullYear() + '-' + String(S.orders.filter(x => x.estado === 'entregado').indexOf(o) + 1).padStart(4, '0');
+  return `<div class="card stack">
+    <div class="row" style="justify-content:space-between"><b style="font-family:var(--display);font-size:22px">Factura ${n}</b><span class="pill muted">Borrador</span></div>
+    <div class="facts">
+      <div><span>Total</span><b>${eur(totals(o).total)}</b></div>
+      <div><span>Garantía</span><b>${fecha(g)}</b></div>
+      <div><span>o hasta</span><b>${o.km ? nf(o.km + 2000) + ' km' : '2.000 km'}</b></div>
+    </div>
+    <div class="banner info">${ICON.clock}<div><b>Recordatorio: próxima revisión</b>${fecha(r)}${o.km ? ' o a los ' + nf(o.km + 15000) + ' km' : ''}. En la versión real se avisa al cliente por WhatsApp.</div></div>
+    <div class="small muted">Garantía legal de reparación: 3 meses o 2.000 km. En el producto real la factura cumplirá VeriFactu.</div>
+  </div>`;
+}
+function addTpl(o, i) {
+  const extra = o.estado === 'reparacion';
+  const ls = linesFrom(i, S.cfg.tarifa, extra).map(l => ({ ...l, tpl: i }));
+  o.lines.push(...ls);
+  log(o, `Añadido: ${PLANTILLAS[i].n}${extra ? ' (extra)' : ''}`);
+  save(); render(); toast(`${PLANTILLAS[i].n} añadido${extra ? ' como extra' : ''}`);
+}
+function addLine(o, l, fromVoz) {
+  const extra = o.estado === 'reparacion';
+  o.lines.push({ id: uid(), extra, aprobada: !extra, fromVoz, ...l });
+  log(o, `Añadido: ${l.desc} (${l.tipo === 'mo' ? nf(l.qty) + ' h' : nf(l.qty) + ' ud'})${extra ? ' (extra)' : ''}`);
+  save(); render();
+}
+
+/* ---------- Vista: presupuesto (lo que ve el cliente) ---------- */
+function mensajePresu(o, soloExtra) {
+  const { ls, total } = totals(o, soloExtra);
+  const hola = o.cliente ? `Hola ${o.cliente.split(' ')[0]}` : 'Hola';
+  const coche = `${o.marca ? o.marca + ' ' : ''}(${fmtPlate(o.plate)})`;
+  const det = ls.map(l => `• ${l.desc}${l.tipo === 'mo' ? ` (${nf(l.qty)} h)` : l.qty > 1 ? ` ×${nf(l.qty)}` : ''}: ${eur(l.qty * l.precio * (1 + IVA))}`).join('\n');
+  const intro = soloExtra
+    ? `${hola}, al revisar tu ${coche} hemos visto que hace falta también:`
+    : `${hola}, te paso el presupuesto de tu ${coche}:`;
+  return `${intro}\n\n${det}\n\nTotal${soloExtra ? ' extra' : ''}: ${eur(total)} (IVA incluido)\n\n¿Nos das el OK para hacerlo? Responde "SÍ" a este mensaje.\n\n— ${S.cfg.taller}`;
+}
+function waLink(tel, text) {
+  const t = String(tel || '').replace(/\D/g, '');
+  const n = t.length === 9 ? '34' + t : t;
+  return `https://wa.me/${n}?text=${encodeURIComponent(text)}`;
+}
+function viewPresupuesto(o, soloExtra) {
+  const msg = mensajePresu(o, soloExtra);
+  const { ls } = totals(o, soloExtra);
+  const vale = new Date(); vale.setDate(vale.getDate() + 16);
+  return `
+  <header class="top"><div class="wrap">
+    <a class="icon-btn" href="#/orden/${o.id}" aria-label="Volver">${ICON.back}</a>
+    <div class="grow"><h1>${soloExtra ? 'Aprobar trabajo extra' : 'Presupuesto'}</h1><div class="sub">${esc(fmtPlate(o.plate))} · ${esc(o.cliente || 'cliente')}</div></div>
+  </div></header>
+  <main class="wrap">
+    ${!ls.length ? `<div class="banner warn"><div><b>No hay trabajos en la orden</b>Vuelve y añade al menos una plantilla, pieza u horas.</div></div>` : ''}
+    <section class="sec"><h2>Así lo recibe tu cliente</h2>
+      <div class="phone"><div class="doc stack">
+        <div class="row" style="justify-content:space-between"><h3>${esc(S.cfg.taller)}</h3>${plate(o.plate)}</div>
+        <div class="mut">${soloExtra ? 'Trabajo adicional' : 'Presupuesto de reparación'} · ${esc(o.marca || '')}${o.km ? ' · ' + nf(o.km) + ' km' : ''}</div>
+        ${linesHTML(o, false, soloExtra)}
+        <div class="mut small">Válido 12 días hábiles (hasta ${fecha(vale)}). Garantía de reparación: 3 meses o 2.000 km.</div>
+        <button class="btn primary block" data-a="${soloExtra ? 'acepta-extra' : 'acepta'}">${ICON.check} Acepto el presupuesto</button>
+        <div class="mut small" style="text-align:center">Botón de demo: simula que el cliente acepta desde el enlace.</div>
+      </div></div>
+    </section>
+    <section class="sec"><h2>Mensaje de WhatsApp</h2>
+      <div class="stack">
+        <textarea id="msg" class="msg" readonly>${esc(msg)}</textarea>
+        ${!o.tel ? '<div class="small muted">Sin móvil del cliente: WhatsApp te dejará elegir el contacto.</div>' : ''}
+      </div>
+    </section>
+  </main>
+  <nav class="bar"><div class="wrap">
+    <button class="btn" data-a="copiar" style="flex:0 0 32%">${ICON.copy} Copiar</button>
+    <a class="btn wa" href="${waLink(o.tel, msg)}" target="_blank" rel="noopener" data-a="enviado" data-extra="${soloExtra ? 1 : 0}">${ICON.chat} Enviar por WhatsApp</a>
+  </div></nav>`;
+}
+function viewAviso(o) {
+  const msg = `${o.cliente ? 'Hola ' + o.cliente.split(' ')[0] : 'Hola'}, tu ${o.marca ? o.marca + ' ' : ''}(${fmtPlate(o.plate)}) ya está listo para recoger.\n\nTotal: ${eur(totals(o).total)} (IVA incluido).\n\n— ${S.cfg.taller}`;
+  return `
+  <header class="top"><div class="wrap">
+    <a class="icon-btn" href="#/orden/${o.id}" aria-label="Volver">${ICON.back}</a>
+    <div class="grow"><h1>Avisar al cliente</h1><div class="sub">${esc(fmtPlate(o.plate))} · ${esc(o.cliente || 'cliente')}</div></div>
+  </div></header>
+  <main class="wrap"><section class="sec"><h2>Mensaje</h2><textarea id="msg" class="msg" readonly>${esc(msg)}</textarea></section></main>
+  <nav class="bar"><div class="wrap">
+    <button class="btn" data-a="copiar" style="flex:0 0 32%">${ICON.copy} Copiar</button>
+    <a class="btn wa" href="${waLink(o.tel, msg)}" target="_blank" rel="noopener" data-a="avisado">${ICON.chat} Enviar por WhatsApp</a>
+  </div></nav>`;
+}
+
+/* ---------- Vista: ajustes ---------- */
+let resetArmed = false;
+function viewAjustes() {
+  return `
+  <header class="top"><div class="wrap">
+    <a class="icon-btn" href="#/" aria-label="Volver">${ICON.back}</a>
+    <div class="grow"><h1>Ajustes</h1></div>
+  </div></header>
+  <main class="wrap">
+    <div class="card stack">
+      <label class="f">Nombre del taller<input id="c-taller" class="inp" value="${esc(S.cfg.taller)}"></label>
+      <label class="f">Precio hora de mano de obra (€, sin IVA)<input id="c-tarifa" class="inp" inputmode="decimal" value="${esc(nf(S.cfg.tarifa))}"></label>
+      <div class="small muted">El precio hora se aplica a los trabajos que añadas a partir de ahora.</div>
+    </div>
+    <div class="card stack">
+      <b>Sobre esta demo</b>
+      <div class="small muted">Prototipo para validar la idea. Los datos se guardan solo en este móvil y no se envían a ningún servidor. Los coches marcados como «ejemplo» son inventados.</div>
+      <button class="btn danger block" data-a="reset">${resetArmed ? 'Pulsa otra vez para borrar todo' : 'Reiniciar demo con datos de ejemplo'}</button>
+      <button class="btn block" data-a="vaciar">Empezar vacío (sin ejemplos)</button>
+    </div>
+  </main>`;
+}
+
+/* ---------- Panel inferior: pieza / horas ---------- */
+let sh = null;
+function openSheet(tipo) {
+  sh = tipo === 'mo' ? { tipo, desc: 'Mano de obra', qty: 1, precio: S.cfg.tarifa } : { tipo, desc: '', qty: 1, precio: '' };
+  renderSheet();
+}
+function renderSheet() {
+  const el = $('#sheet');
+  if (!sh) { el.innerHTML = ''; return; }
+  const mo = sh.tipo === 'mo';
+  el.innerHTML = `<div class="sheet-bg" data-a="close-sheet"><div class="sheet" role="dialog" aria-modal="true" aria-label="${mo ? 'Añadir horas' : 'Añadir pieza'}"><div class="wrap">
+    <h3>${mo ? 'Añadir horas' : 'Añadir pieza'}</h3>
+    <label class="f">${mo ? 'Trabajo' : 'Pieza'}<input id="s-desc" class="inp" value="${esc(sh.desc)}" placeholder="${mo ? 'Mano de obra' : 'Ej. Termostato'}"></label>
+    <div class="f" style="font-weight:600;font-size:15px">${mo ? 'Horas' : 'Cantidad'}</div>
+    <div class="stepper"><button class="btn" data-a="st" data-v="-1" aria-label="Menos">−</button><output id="s-qty">${nf(sh.qty)}</output><button class="btn" data-a="st" data-v="1" aria-label="Más">${ICON.plus}</button></div>
+    ${mo ? `<div class="muted">${eur(sh.precio)}/h · ${eur(sh.qty * sh.precio)} sin IVA</div>` : `<label class="f">Precio unidad (€, sin IVA)<input id="s-precio" class="inp" inputmode="decimal" value="${esc(sh.precio)}" placeholder="0,00"></label>`}
+    <div class="grid2"><button class="btn" data-a="close-sheet">Cancelar</button><button class="btn primary" data-a="save-sheet">${ICON.check} Añadir</button></div>
+  </div></div></div>`;
+}
+
+/* ---------- Fotos ---------- */
+let camTarget = null;
+function compress(file, max = 720, q = 0.6) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = rej; img.src = url;
+  });
+}
+$('#cam').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f || !camTarget) return;
+  let src; try { src = await compress(f); } catch (err) { toast('No se pudo leer la foto.'); return; }
+  const k = camTarget.k;
+  if (camTarget.order) {
+    const o = ord(camTarget.order);
+    o.piezasFotos = o.piezasFotos || []; o.piezasFotos.push(src);
+    log(o, 'Foto de pieza añadida'); save(); render(); toast('Foto guardada en la orden');
+  } else {
+    if (k === 'mat') draft.fotoMat = src; else if (k === 'cuadro') draft.fotoCuadro = src; else draft.fotos[k] = src;
+    render();
+  }
+  camTarget = null;
+});
+
+/* ---------- Voz (Web Speech API) ---------- */
+let rec = null, recBtn = null;
+function stopMic() { if (rec) { try { rec.stop(); } catch (e) { } } }
+function toggleMic(btn) {
+  if (rec) { stopMic(); return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Este navegador no permite dictado. Usa el micrófono del teclado.'); $('#' + btn.dataset.t)?.focus(); return; }
+  const ta = $('#' + btn.dataset.t), base = ta.value.trim();
+  rec = new SR(); rec.lang = 'es-ES'; rec.interimResults = true; rec.continuous = true;
+  recBtn = btn; btn.classList.add('on'); btn.querySelector('span').textContent = 'Escuchando… pulsa para parar';
+  let finalTxt = '';
+  rec.onresult = ev => {
+    let interim = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r = ev.results[i];
+      if (r.isFinal) finalTxt += r[0].transcript + ' '; else interim += r[0].transcript;
+    }
+    ta.value = (base ? base + ' ' : '') + (finalTxt + interim).trim();
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  rec.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') toast('Permite el micrófono en el navegador para dictar.'); else if (ev.error === 'no-speech') toast('No se ha oído nada. Prueba más cerca del móvil.'); };
+  rec.onend = () => {
+    rec = null;
+    if (recBtn && document.body.contains(recBtn)) { recBtn.classList.remove('on'); recBtn.querySelector('span').textContent = recBtn.dataset.t === 'o-nota' ? 'Dictar diagnóstico' : 'Dictar lo que dice el cliente'; }
+    recBtn = null;
+    const o = route().v === 'orden' && ord(route().id);
+    if (o) { log(o, 'Nota de voz dictada'); save(); }
+  };
+  try { rec.start(); } catch (e) { rec = null; btn.classList.remove('on'); toast('No se pudo iniciar el micrófono.'); }
+}
+
+/* ---------- Eventos ---------- */
+document.addEventListener('click', async e => {
+  const t = e.target.closest('[data-a]'); if (!t) return;
+  const a = t.dataset.a, r = route(), o = ord(r.id);
+  if (a === 'close-sheet') { if (e.target === t || t.tagName === 'BUTTON') { sh = null; renderSheet(); } return; }
+  switch (a) {
+    case 'fuel': draft.fuel = +t.dataset.v; t.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === t)); break;
+    case 'sint': { const v = t.dataset.v, i = draft.sintomas.indexOf(v); i < 0 ? draft.sintomas.push(v) : draft.sintomas.splice(i, 1); t.setAttribute('aria-pressed', i < 0); break; }
+    case 'foto': camTarget = { k: t.dataset.k, order: t.dataset.k === 'pieza' ? r.id : null }; $('#cam').click(); break;
+    case 'mic': toggleMic(t); break;
+    case 'cancel-new': draft = null; break;
+    case 'crear': crearOrden(); break;
+    case 'tpl': addTpl(o, +t.dataset.i); break;
+    case 'horas-voz': addLine(o, { tipo: 'mo', desc: 'Mano de obra (de la nota de voz)', qty: +t.dataset.h, precio: S.cfg.tarifa }, true); break;
+    case 'del-line': { const l = o.lines.find(x => x.id === t.dataset.id); o.lines = o.lines.filter(x => x.id !== t.dataset.id); log(o, 'Quitado: ' + l.desc); save(); render(); break; }
+    case 'sheet-pieza': openSheet('pieza'); break;
+    case 'sheet-horas': openSheet('mo'); break;
+    case 'st': { const step = sh.tipo === 'mo' ? 0.25 : 1; sh.desc = $('#s-desc').value; if ($('#s-precio')) sh.precio = $('#s-precio').value; sh.qty = Math.max(step, +(sh.qty + step * +t.dataset.v).toFixed(2)); renderSheet(); break; }
+    case 'save-sheet': {
+      const desc = $('#s-desc').value.trim() || (sh.tipo === 'mo' ? 'Mano de obra' : 'Pieza');
+      const precio = sh.tipo === 'mo' ? sh.precio : parseFloat(String($('#s-precio').value).replace(',', '.'));
+      if (sh.tipo !== 'mo' && !(precio >= 0)) { toast('Pon el precio de la pieza.'); $('#s-precio').focus(); return; }
+      const l = { tipo: sh.tipo, desc, qty: sh.qty, precio }; sh = null; renderSheet(); addLine(o, l); break;
+    }
+    case 'ir-presu': if (!o.lines.length) { toast('Añade algún trabajo antes de enviar el presupuesto.'); return; } go('#/presupuesto/' + o.id); break;
+    case 'enviado':
+      if (t.dataset.extra === '1') log(o, 'Trabajo extra enviado al cliente');
+      else { if (o.estado === 'recepcion') o.estado = 'presupuesto'; log(o, `Presupuesto enviado por WhatsApp (${eur(totals(o).total)})`); }
+      save(); break;
+    case 'avisado': log(o, 'Cliente avisado: coche listo'); save(); break;
+    case 'copiar': {
+      const ta = $('#msg');
+      try { await navigator.clipboard.writeText(ta.value); toast('Mensaje copiado'); }
+      catch (err) { ta.focus(); ta.select(); toast('Selecciona y copia el texto'); }
+      if (r.v === 'presupuesto' && !r.extra && o.estado === 'recepcion') { o.estado = 'presupuesto'; log(o, 'Presupuesto copiado para enviar'); save(); }
+      break;
+    }
+    case 'acepta': o.estado = 'reparacion'; log(o, 'Cliente acepta el presupuesto'); save(); toast('Aceptado: pasa a reparación'); go('#/orden/' + o.id); break;
+    case 'acepta-extra': o.lines.forEach(l => { if (l.extra) l.aprobada = true; }); log(o, 'Cliente aprueba el trabajo extra'); save(); toast('Extra aprobado'); go('#/orden/' + o.id); break;
+    case 'terminar': o.estado = 'listo'; log(o, 'Trabajo terminado'); save(); toast('Listo para entregar'); render(); break;
+    case 'entregar': o.estado = 'entregado'; log(o, `Entregado y cobrado (${eur(totals(o).total)})`); save(); toast('Entregado'); render(); window.scrollTo(0, 0); break;
+    case 'reset': if (!resetArmed) { resetArmed = true; render(); setTimeout(() => { resetArmed = false; if (route().v === 'ajustes') render(); }, 4000); } else { resetArmed = false; S = seed(); memOnly = false; save(); toast('Demo reiniciada'); go('#/'); } break;
+    case 'vaciar': S.orders = []; save(); toast('Tablero vacío'); go('#/'); break;
+  }
+});
+document.addEventListener('input', e => {
+  const id = e.target.id, v = e.target.value, r = route();
+  if (id === 'f-plate') onPlateInput(e.target);
+  else if (id && id.startsWith('f-') && draft) {
+    const k = { 'f-marca': 'marca', 'f-cliente': 'cliente', 'f-tel': 'tel', 'f-km': 'km', 'f-nota': 'nota' }[id];
+    if (k) draft[k] = v;
+  }
+  else if (id === 'o-nota') { const o = ord(r.id); o.nota = v; save(); $('#sug').innerHTML = sugerencias(o); }
+  else if (id === 'c-taller') { S.cfg.taller = v.trim() || 'Mi Taller'; save(); }
+  else if (id === 'c-tarifa') { const n = parseFloat(v.replace(',', '.')); if (n > 0) { S.cfg.tarifa = n; save(); } }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'f-sindanos') draft.sinDanos = e.target.checked;
+  if (e.target.id === 'f-plate') { const p = normPlate(e.target.value); e.target.value = fmtPlate(p); }
+});
+function after() {
+  if (route().v === 'nuevo' && !draft.plate) { const p = $('#f-plate'); if (p) setTimeout(() => p.focus(), 50); }
+}
+
+render();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { });
+</script>
+</body>
+</html>
