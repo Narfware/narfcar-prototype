@@ -357,6 +357,7 @@ function viewTablero() {
     <a class="grow title-link" href="#/ajustes" aria-label="Editar datos del taller"><h1>${esc(S.cfg.taller)} ${ICON.edit}</h1><div class="sub">${hoy} <span class="demo-tag">Demo</span></div></a>
   </div></header>
   <main class="wrap">
+    ${S.orders.length ? '' : `<div class="card stack" style="margin-top:16px"><b>El tablero está vacío</b><div class="small muted">Crea la primera ficha con el botón de abajo o carga unos coches de ejemplo para enseñar la demo.</div><button class="btn block" data-a="reset">Cargar coches de ejemplo</button></div>`}
     <div class="kpis">${act.map(e => `<div class="kpi"><b>${by(e).length}</b><span>${ST[e].l}</span></div>`).join('')}</div>
     ${act.map(e => `<section class="sec"><h2>${ST[e].l} <span class="count">${by(e).length}</span></h2>
       <div class="stack">${by(e).map(card).join('') || `<div class="empty">Ningún coche aquí</div>`}</div></section>`).join('')}
@@ -655,7 +656,6 @@ function viewAviso(o) {
 }
 
 /* ---------- Vista: ajustes ---------- */
-let resetArmed = false;
 function viewAjustes() {
   return `
   <header class="top"><div class="wrap">
@@ -673,7 +673,7 @@ function viewAjustes() {
     <div class="card stack">
       <b>Sobre esta demo</b>
       <div class="small muted">Prototipo para validar la idea. Los datos se guardan solo en este móvil y no se envían a ningún servidor. Los coches marcados como «ejemplo» son inventados.</div>
-      <button class="btn danger block" data-a="reset">${resetArmed ? 'Pulsa otra vez para borrar todo' : 'Reiniciar demo con datos de ejemplo'}</button>
+      <button class="btn danger block" data-a="reset">Cargar coches de ejemplo</button>
       <button class="btn block" data-a="vaciar">Empezar vacío (sin ejemplos)</button>
     </div>
   </main>`;
@@ -803,8 +803,8 @@ document.addEventListener('click', async e => {
     case 'acepta-extra': o.lines.forEach(l => { if (l.extra) l.aprobada = true; }); log(o, 'Cliente aprueba el trabajo extra'); save(); toast('Extra aprobado'); go('#/orden/' + o.id); break;
     case 'terminar': o.estado = 'listo'; log(o, 'Trabajo terminado'); save(); toast('Listo para entregar'); render(); break;
     case 'entregar': o.estado = 'entregado'; log(o, `Entregado y cobrado (${eur(totals(o).total)})`); save(); toast('Entregado'); render(); window.scrollTo(0, 0); break;
-    case 'reset': if (!resetArmed) { resetArmed = true; render(); setTimeout(() => { resetArmed = false; if (route().v === 'ajustes') render(); }, 4000); } else { resetArmed = false; S = seed(); memOnly = false; save(); toast('Demo reiniciada'); go('#/'); } break;
-    case 'vaciar': S.orders = []; save(); toast('Tablero vacío'); go('#/'); break;
+    case 'reset': if (!S.orders.length || confirm('Se borrarán los coches actuales y se cargarán los de ejemplo. ¿Seguir?')) { const cfg = S.cfg; S = seed(); S.cfg = cfg; memOnly = false; save(); toast('Coches de ejemplo cargados'); go('#/'); } break;
+    case 'vaciar': if (!S.orders.length || confirm('Se borrarán todos los coches del tablero. ¿Seguir?')) { S.orders = []; save(); toast('Tablero vacío'); go('#/'); } break;
   }
 });
 document.addEventListener('input', e => {
