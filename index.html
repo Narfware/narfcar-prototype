@@ -123,6 +123,7 @@ textarea.inp{min-height:96px;resize:vertical}
 .banner.warn{background:var(--warn-bg);color:var(--ink)}
 .banner.info{background:var(--info-bg);color:var(--ink)}
 .banner b{display:block}
+.banner>svg{width:24px;height:24px;flex:none;margin-top:1px}
 
 .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .seg button{min-height:56px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-weight:700;font-size:15px;cursor:pointer;padding:4px}
@@ -222,6 +223,7 @@ const fmtPlate = p => PLATE_RE.test(p) ? p.slice(0, 4) + ' ' + p.slice(4) : p;
 
 const ICON = {
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  star: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M14 6l4 4"/></svg>',
   ficha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M9 11h6M9 15h4"/></svg>',
   cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
@@ -267,7 +269,7 @@ function seed() {
   const t = Date.now(), tar = 45;
   const ev = (...a) => a.map(([dt, txt]) => ({ t: t - dt, txt }));
   return {
-    cfg: { taller: 'Mi Taller', tarifa: tar },
+    cfg: { taller: 'Mi Taller', tarifa: tar, resenas: '' },
     orders: [
       { id: 'ej1', ejemplo: true, plate: '4821KLM', marca: 'Seat León 1.6 TDI', cliente: 'María López', tel: '', km: 142300, fuel: 2, sintomas: ['Frenos'], nota: 'Chirrían los frenos delanteros al frenar suave.', fotos: {}, piezasFotos: [], sinDanos: true, estado: 'reparacion', creado: t - 3 * H, lines: linesFrom(2, tar),
         eventos: ev([3 * H, 'Entrada en taller · 142.300 km · depósito 1/2'], [3 * H - 60000, 'Resguardo de depósito generado'], [2.7 * H, 'Presupuesto enviado por WhatsApp'], [2.4 * H, 'Cliente acepta el presupuesto']) },
@@ -564,8 +566,17 @@ function entregaResumen(o) {
     </div>
     <div class="banner info">${ICON.clock}<div><b>Recordatorio: próxima revisión</b>${fecha(r)}${o.km ? ' o a los ' + nf(o.km + 15000) + ' km' : ''}. En la versión real se avisa al cliente por WhatsApp.</div></div>
     <div class="small muted">Garantía legal de reparación: 3 meses o 2.000 km. En el producto real la factura cumplirá VeriFactu.</div>
+  </div>
+  <div class="card stack">
+    <div class="row" style="gap:10px;flex-wrap:nowrap">${ICON.star}<b style="font-family:var(--display);font-size:22px">Reseña en Google</b></div>
+    ${o.resena ? `<div class="banner ok">${ICON.check}<div><b>Reseña pedida</b>${hace(o.resena)}. Puedes volver a enviarla si hace falta.</div></div>`
+      : `<div class="small muted">El mejor momento es ahora: el coche está arreglado y el cliente contento.</div>`}
+    <a class="btn wa block" href="${waLink(o.tel, msgResena(o))}" target="_blank" rel="noopener" data-a="resena">${ICON.chat} Pedir reseña por WhatsApp</a>
+    ${S.cfg.resenas ? '' : `<div class="small muted">Demo: aún no hay enlace de reseñas, así que se usa la búsqueda del taller en Google Maps. Pon el enlace real en <a href="#/ajustes">Datos del taller</a>.</div>`}
   </div>`;
 }
+const linkResena = () => S.cfg.resenas || 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(S.cfg.taller);
+const msgResena = o => `${o.cliente ? 'Hola ' + o.cliente.split(' ')[0] : 'Hola'}, gracias por confiar en ${S.cfg.taller} 🙌\n\nSi quedaste contento con la reparación del ${o.marca || 'coche'}, nos ayudas muchísimo dejando una reseña en Google. Es un minuto:\n${linkResena()}\n\n¡Gracias!`;
 function addTpl(o, i) {
   const extra = o.estado === 'reparacion';
   const ls = linesFrom(i, S.cfg.tarifa, extra).map(l => ({ ...l, tpl: i }));
@@ -656,6 +667,8 @@ function viewAjustes() {
       <label class="f">Nombre del taller<input id="c-taller" class="inp" value="${esc(S.cfg.taller)}"></label>
       <label class="f">Precio hora de mano de obra (€, sin IVA)<input id="c-tarifa" class="inp" inputmode="decimal" value="${esc(nf(S.cfg.tarifa))}"></label>
       <div class="small muted">El precio hora se aplica a los trabajos que añadas a partir de ahora.</div>
+      <label class="f">Enlace para reseñas de Google<input id="c-resenas" class="inp" inputmode="url" placeholder="https://g.page/r/..." value="${esc(S.cfg.resenas || '')}"></label>
+      <div class="small muted">Se saca desde la app de Google Maps o Perfil de Empresa: «Pedir reseñas» → copiar enlace.</div>
     </div>
     <div class="card stack">
       <b>Sobre esta demo</b>
@@ -778,6 +791,7 @@ document.addEventListener('click', async e => {
       else { if (o.estado === 'recepcion') o.estado = 'presupuesto'; log(o, `Presupuesto enviado por WhatsApp (${eur(totals(o).total)})`); }
       save(); break;
     case 'avisado': log(o, 'Cliente avisado: coche listo'); save(); break;
+    case 'resena': o.resena = Date.now(); log(o, 'Reseña de Google pedida por WhatsApp'); save(); setTimeout(render, 300); break;
     case 'copiar': {
       const ta = $('#msg');
       try { await navigator.clipboard.writeText(ta.value); toast('Mensaje copiado'); }
@@ -802,6 +816,7 @@ document.addEventListener('input', e => {
   }
   else if (id === 'o-nota') { const o = ord(r.id); o.nota = v; save(); $('#sug').innerHTML = sugerencias(o); }
   else if (id === 'c-taller') { S.cfg.taller = v.trim() || 'Mi Taller'; save(); }
+  else if (id === 'c-resenas') { S.cfg.resenas = v.trim(); save(); }
   else if (id === 'c-tarifa') { const n = parseFloat(v.replace(',', '.')); if (n > 0) { S.cfg.tarifa = n; save(); } }
 });
 document.addEventListener('change', e => {
