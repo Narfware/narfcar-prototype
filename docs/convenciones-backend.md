@@ -1,0 +1,176 @@
+# Convenciones de backend
+
+Extraídas de `Narfware/enigmapp-backend` (commit `e7f7efa`). Son la referencia para el backend del
+software de talleres. Cada regla describe lo que hace ese repo; las adaptaciones a Next.js y lo que
+conviene no copiar van en secciones aparte, al final.
+
+## Estructura de carpetas
+
+```
+src/<app>/
+  index.ts                         arranque: lee el entorno, crea la conexión, inicia contenedores
+  contexts/<contexto>/
+    domain/
+      <agregado>.ts                la entidad raíz, en la raíz de domain/
+      value-objects/<vo>.ts
+      repositories/<x>Repository.ts   interfaz
+      interfaces/<puerto>.ts          resto de puertos de salida
+      exceptions/<error>.ts
+    application/
+      <verboSustantivo>.ts         un caso de uso por fichero
+    infrastructure/
+      <tecnologia><Puerto>.ts      adaptadores sueltos en la raíz de infrastructure/
+      controllers/<casoDeUso>Controller.ts
+      repositories/<tecnologia><X>Repository.ts
+      persistence/postgres/drizzle/schemas/<x>Schema.ts
+      dependency-injection/index.ts
+  shared/
+    dependency-injection/container.ts
+    infrastructure/                conexión a base de datos, servidor
+tests/<app>/                       espejo exacto de src/
+  contexts/<contexto>/
+    __mocks__/<puerto>Mock.ts
+    domain/<Clase>Mother.ts
+    application/<casoDeUso>.test.ts
+    infrastructure/...             un test por adaptador
+  shared/infrastructure/persistence/<x>Arranger.ts
+drizzle/                           migraciones SQL generadas
+```
+
+- Un contexto acotado por carpeta. Lo compartido entre contextos va a `shared/`.
+- `tests/` replica la ruta de `src/` fichero a fichero. Los tests no viven junto al código.
+
+## Nombres
+
+- Ficheros en `camelCase.ts`: `authenticateChallenge.ts`, `postgresUserRepository.ts`.
+  Excepción: los Object Mothers en `PascalCase` (`UserMother.ts`).
+- Clases en `PascalCase`, una clase exportada por fichero, con export nombrado (sin `default`).
+- Casos de uso: verbo + sustantivo, sin sufijo. `CreateUser`, no `CreateUserUseCase`.
+- Puertos: nombre del rol, sin prefijo `I`. `UserRepository`, `TimeProvider`.
+- Adaptadores: tecnología + puerto. `NodeCryptoNonceGenerator`, `DrizzlePostgresUserRepository`.
+- Controladores: caso de uso + `Controller`.
+- Excepciones: nombre del problema, sin sufijo `Error`. `InvalidNonce`.
+- Tablas Drizzle: `<plural>Table` (`usersTable`); nombre SQL en plural y minúsculas.
+- Código, nombres y tests en inglés.
+
+## Dependencias entre capas
+
+- `domain` no importa nada de fuera de `domain`: ni librerías, ni `application`, ni `infrastructure`.
+- `application` importa solo de `domain`.
+- `infrastructure` importa de `domain` y `application`, y es el único sitio con librerías externas
+  (Express, Drizzle, `crypto`, `jsonwebtoken`).
+- Imports relativos; no hay alias de rutas.
+
+## Dominio y orientación a objetos
+
+- **El comportamiento vive en la entidad.** El caso de uso no decide: `user.verifyNonce(...)`
+  comprueba caducidad, valor y firma, y cambia el estado. Nada de entidades anémicas.
+- **Estado privado, sin getters ni setters.** Campos `private`, identidad `private readonly`.
+  El estado sale solo por `toPrimitives()`.
+- **Serialización explícita:** cada entidad y value object tiene `toPrimitives()` y
+  `static fromPrimitives()`, y la entidad exporta su tipo `Primitive<Entidad>`. Es la única frontera
+  con persistencia y transporte.
+- **Construcción:** `static create(...)` para crear algo nuevo según las reglas del dominio;
+  `fromPrimitives` para rehidratar lo ya guardado.
+- **Value objects** inmutables (`readonly`), con `equals()` y métodos que responden preguntas
+  (`isExpired(now)`, `hasSameValue(value)`, `isBefore(time)`). Las constantes de negocio van junto
+  al value object que las usa (`NONCE_EXPIRATION_TIME_IN_MINUTES`).
+- **Nada de reloj ni azar directos en el dominio.** El tiempo entra por `TimeProvider` y lo
+  aleatorio por un puerto (`NonceGenerator`); así los tests son deterministas.
+- **Inyección por método (doble despacho):** cuando la entidad necesita un servicio, lo recibe como
+  parámetro del método (`user.generateNonce(nonceGenerator)`), no lo guarda.
+- **Errores de dominio como excepciones propias** que extienden `Error`, en `domain/exceptions/`.
+  Se lanzan con cláusulas de guarda al principio del método.
+- Los puertos devuelven objetos de dominio, nunca primitivos sueltos ni filas de base de datos.
+
+## Casos de uso
+
+- Una clase con un único método público `execute`.
+- Dependencias por constructor, tipadas con las interfaces del dominio, como `private` en la firma.
+- Entrada: un objeto de primitivos con tipo `<CasoDeUso>Params` declarado en el mismo fichero
+  (o un primitivo suelto si solo hay uno). Nunca objetos de Express ni entidades.
+- Forma fija: **cargar** el agregado por el repositorio, **invocar** un método del dominio,
+  **guardar**, y devolver lo mínimo.
+- Sin `if` de negocio en el caso de uso: las reglas están en el dominio.
+- Si el dominio lanza, no se guarda (lo comprueba el test con `assertSaveNotCalled`).
+
+## Infraestructura
+
+- **Repositorios:** reciben la conexión por constructor. `save` es un upsert
+  (`insert ... onConflictDoUpdate`) a partir de `toPrimitives()`. `find` devuelve la entidad con
+  `fromPrimitives`. El mapeo entre columnas y primitivos se hace a mano en el repositorio.
+- **Esquemas Drizzle** dentro del contexto, en `infrastructure/persistence/`. Los value objects se
+  aplanan en columnas (`nonce`, `nonceExpirationTime`).
+- **Controladores:** una clase con `execute(request, response)`. Solo extraen datos de la petición,
+  piden el caso de uso al contenedor, lo ejecutan y responden. Sin lógica.
+- **Inyección de dependencias:** a mano, sin librería. Cada contexto tiene su
+  `dependency-injection/index.ts` que construye adaptadores y casos de uso y los registra en un
+  `Container` (un `Map` indexado por la clase). Se expone `init<Contexto>Container(database)` y
+  `get<Contexto>Container()`.
+- **Configuración** por variables de entorno, leídas en el arranque o en el adaptador que las usa,
+  con error explícito si faltan.
+
+## Tests
+
+- **Vitest**, importando `describe`, `it`, `expect`, `vi` de forma explícita.
+- **Unitarios de casos de uso** (`tests/.../application/`): es donde se prueba el dominio. Se
+  instancia el caso de uso con mocks en `beforeEach` y se llama a `vi.restoreAllMocks()` en
+  `afterEach`.
+- **Mocks escritos a mano**, uno por puerto, en `__mocks__/`. Implementan la interfaz y exponen:
+  - `returnOn<Método>(valor)` para preparar la respuesta,
+  - `assert<Método>HaveBeenCalledWith(...)` y `assert<Método>NotCalled()` para verificar,
+  - un valor por defecto sensato (de un Mother) si no se prepara nada.
+  Los `vi.fn()` quedan encapsulados; el test no los toca.
+- **Object Mothers** en `tests/.../domain/`: `<Clase>Mother.create(...)` con valores por defecto y
+  parámetros opcionales, más métodos con nombre para casos (`UserMother.nonceExpired()`,
+  `NonceMother.expired()`).
+- **Aserción sobre el agregado completo:** se compara lo guardado con una entidad esperada
+  construida entera (`assertSaveHaveBeenCalledWith(new User(...))`), no campo a campo.
+- **Integración de adaptadores** (`tests/.../infrastructure/`): contra la dependencia real.
+  - Repositorios: Postgres real con Testcontainers. Un `Arranger` compartido levanta el contenedor,
+    aplica las migraciones de `drizzle/`, trunca tablas en `beforeEach` y cierra en `afterAll`.
+  - Controladores: servidor real con `supertest`, contenedor de dependencias real y Postgres real.
+  - Adaptadores de librería (`crypto`, JWT): se ejercitan de verdad, con casos positivos y negativos.
+- **Nombres:** `describe('<Caso de uso en lenguaje natural>')`, `it('Should ... when ...')`.
+- **Orden:** preparar, ejecutar, verificar, separados por una línea en blanco.
+
+## Estilo
+
+- Prettier: 120 columnas, 4 espacios, comillas simples, sin punto y coma, sin coma final,
+  flechas sin paréntesis con un solo parámetro.
+- ESLint con `typescript-eslint` recomendado.
+- TypeScript en modo `strict`.
+- Cláusulas de guarda en una línea: `if (...) throw new X()`.
+- Sin comentarios en el código: los nombres explican.
+
+## Adaptación a Next.js en Vercel
+
+Esto no viene de enigmapp; es lo que cambia al llevar las mismas convenciones al stack elegido.
+
+- Los **controladores** pasan a ser Route Handlers y Server Actions: mismo papel, misma regla de no
+  contener lógica.
+- **Contenedor de dependencias:** en funciones sin estado no hay arranque único. El contenedor se
+  crea de forma perezosa la primera vez que se pide en cada instancia.
+- **Conexión a Postgres** a través del pooler de Supabase, con pocas conexiones por instancia.
+- **Todas las escrituras** pasan por un caso de uso en el servidor. El navegador solo lee.
+- **Tiempo real:** Supabase Realtime en lugar de socket.io.
+- **Tests de integración:** Testcontainers se mantiene para repositorios; para los Route Handlers,
+  se invoca el handler directamente en lugar de `supertest`.
+- Los componentes React quedan fuera de estas reglas: son un adaptador de entrada más y no
+  contienen reglas de negocio.
+
+## Lo que no conviene copiar tal cual
+
+Detalles vistos en enigmapp que parecen descuidos, no convenciones.
+
+- `Time.addMinutes` y `subtractMinutes` modifican la fecha interna además de devolver un `Time`
+  nuevo; un value object no debería mutar.
+- `Nonce.equals` compara con `===` el resultado de `toPrimitives()`, que son dos objetos distintos,
+  así que siempre da falso. En `Time` funciona porque el primitivo es un número.
+- `find` no trata el caso de no encontrado: falla con un error de tipo en lugar de una excepción de
+  dominio.
+- No hay traducción de excepciones de dominio a códigos HTTP en los controladores.
+- `createUserController.test.ts` importa `beforeEach` de `node:test` en vez de Vitest, así que la
+  limpieza de la base de datos no se ejecuta.
+- No hay tests propios de entidades ni value objects; se cubren solo a través de los casos de uso.
+- No hay validación de la entrada en los controladores.
