@@ -70,7 +70,14 @@ drizzle/                           migraciones SQL generadas
 Decisión propia de narfcar: es un monolito modular, un solo despliegue con cada contexto aislado.
 
 - Un contexto no importa el dominio de otro ni lee sus tablas.
-- Se comunican por eventos de dominio o por una query pública del otro contexto.
+- **Para leer de otro contexto se usa el query bus:** `await queryBus.ask(new GetWorkshopSettingsQuery(id))`.
+  `QueryBus` es un puerto en `shared/domain`; la implementación es `InMemoryQueryBus`, síncrona.
+- La clase de la query y el tipo de su respuesta son el contrato público del contexto dueño, y lo
+  único suyo que otro contexto puede importar. Ambos son datos planos, sin dependencias.
+- Quien responde es el caso de uso de `application/queries/` del contexto dueño, registrado como
+  manejador de esa query. Dentro del propio contexto se le puede llamar directamente.
+- No hay command bus: un contexto nunca ordena una escritura a otro. Si algo debe pasar en otro
+  contexto, reacciona a un evento de dominio.
 - Entre contextos solo viajan identificadores y primitivos, nunca entidades.
 - Cada contexto es dueño de sus tablas, aunque compartan base de datos.
 - `shared/` contiene solo lo común de verdad: identificadores, `Money`, `TimeProvider`, `EventBus`.
