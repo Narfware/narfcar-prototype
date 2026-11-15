@@ -124,10 +124,15 @@ Decisión propia de narfcar; no viene de enigmapp, donde los casos de uso no est
 - Cada caso de uso es un **command** (escribe) o una **query** (lee), nunca las dos cosas. Viven en
   `application/commands/` y `application/queries/`.
 - **Command:** carga el agregado, invoca el dominio y guarda. Por norma no devuelve datos; si falla,
-  lanza una excepción de dominio. Por pragmatismo puede devolver algo cuando hace falta, como el
-  identificador de lo que acaba de crear, pero es la excepción.
-- **Identificadores:** los genera el backend, en el caso de uso, a través de un puerto
-  (`IdGenerator`), para no meter azar en el dominio. Las escrituras son síncronas.
+  lanza una excepción de dominio. Por pragmatismo puede devolver algo cuando hace falta, pero es
+  la excepción.
+- **Identificadores:** los genera el cliente (UUID) y llegan en el command, tanto el del agregado
+  como el de lo que se crea dentro de él (una línea, una foto). Como en enigmapp con el usuario.
+- **Commands idempotentes:** recibir dos veces el mismo command deja el mismo estado. Crear con un
+  id que ya existe no duplica. Es lo que permite reintentar tras un fallo de red.
+- **Sin cambio no hay evento:** si un command repetido no modifica el agregado, no se registra
+  evento de dominio.
+- El servidor ejecuta cada command de forma síncrona. La cola de reintentos vive en el cliente.
 - **Query:** no modifica nada ni llama a `save`. Devuelve primitivos pensados para la pantalla, no
   entidades. Puede leer por un puerto de lectura propio en lugar de reconstruir el agregado.
 - La creación de un agregado es un command; cada cambio posterior es otro command distinto. En la
