@@ -17,7 +17,8 @@ src/<app>/
       interfaces/<puerto>.ts          resto de puertos de salida
       exceptions/<error>.ts
     application/
-      <verboSustantivo>.ts         un caso de uso por fichero
+      commands/<verboSustantivo>.ts   escrituras, un caso de uso por fichero
+      queries/<verboSustantivo>.ts    lecturas, un caso de uso por fichero
     infrastructure/
       <tecnologia><Puerto>.ts      adaptadores sueltos en la raíz de infrastructure/
       controllers/<casoDeUso>Controller.ts
@@ -31,7 +32,8 @@ tests/<app>/                       espejo exacto de src/
   contexts/<contexto>/
     __mocks__/<puerto>Mock.ts
     domain/<Clase>Mother.ts
-    application/<casoDeUso>.test.ts
+    application/commands/<casoDeUso>.test.ts
+    application/queries/<casoDeUso>.test.ts
     infrastructure/...             un test por adaptador
   shared/infrastructure/persistence/<x>Arranger.ts
 drizzle/                           migraciones SQL generadas
@@ -51,7 +53,7 @@ drizzle/                           migraciones SQL generadas
 - Controladores: caso de uso + `Controller`.
 - Excepciones: nombre del problema, sin sufijo `Error`. `InvalidNonce`.
 - Tablas Drizzle: `<plural>Table` (`usersTable`); nombre SQL en plural y minúsculas.
-- Código, nombres y tests en inglés.
+- Código, nombres y tests en inglés. El texto que ve el usuario, en español.
 
 ## Dependencias entre capas
 
@@ -93,6 +95,20 @@ drizzle/                           migraciones SQL generadas
   **guardar**, y devolver lo mínimo.
 - Sin `if` de negocio en el caso de uso: las reglas están en el dominio.
 - Si el dominio lanza, no se guarda (lo comprueba el test con `assertSaveNotCalled`).
+
+## Commands y queries
+
+Decisión propia de narfcar; no viene de enigmapp, donde los casos de uso no están separados.
+
+- Cada caso de uso es un **command** (escribe) o una **query** (lee), nunca las dos cosas. Viven en
+  `application/commands/` y `application/queries/`.
+- **Command:** carga el agregado, invoca el dominio y guarda. No devuelve datos; si falla, lanza una
+  excepción de dominio. Los identificadores los genera quien llama, así no hace falta devolverlos.
+- **Query:** no modifica nada ni llama a `save`. Devuelve primitivos pensados para la pantalla, no
+  entidades. Puede leer por un puerto de lectura propio en lugar de reconstruir el agregado.
+- La creación de un agregado es un command; cada cambio posterior es otro command distinto. En la
+  recepción: `OpenWorkOrder` crea la orden y cada paso siguiente es una mutación con su caso de uso.
+- Misma base de datos para escribir y leer, sin buses ni event sourcing, salvo que se decida otra cosa.
 
 ## Infraestructura
 
