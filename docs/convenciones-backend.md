@@ -1,8 +1,8 @@
 # Convenciones de backend
 
-Extraídas de `Narfware/enigmapp-backend` (commit `e7f7efa`). Son la referencia para el backend del
-software de talleres. Cada regla describe lo que hace ese repo; las adaptaciones a Next.js y lo que
-conviene no copiar van en secciones aparte, al final.
+Extraídas de `Narfware/enigmapp-backend` (commit `e7f7efa`) y ampliadas con las decisiones de
+arquitectura de narfcar. Las secciones que no vienen de enigmapp lo indican al empezar; las
+adaptaciones a Next.js y lo que conviene no copiar van al final.
 
 ## Estructura de carpetas
 
@@ -132,7 +132,9 @@ Decisión propia de narfcar; no viene de enigmapp, donde los casos de uso no est
   id que ya existe no duplica. Es lo que permite reintentar tras un fallo de red.
 - **Sin cambio no hay evento:** si un command repetido no modifica el agregado, no se registra
   evento de dominio.
-- El servidor ejecuta cada command de forma síncrona. La cola de reintentos vive en el cliente.
+- El servidor ejecuta cada command de forma síncrona. En el cliente no hay cola ni almacenamiento
+  local: si falla la red, se reintenta el mismo command. Se medirá si el problema ocurre antes de
+  añadir más.
 - **Query:** no modifica nada ni llama a `save`. Devuelve primitivos pensados para la pantalla, no
   entidades. Puede leer por un puerto de lectura propio en lugar de reconstruir el agregado.
 - La creación de un agregado es un command; cada cambio posterior es otro command distinto. En la
