@@ -65,6 +65,18 @@ drizzle/                           migraciones SQL generadas
   (Express, Drizzle, `crypto`, `jsonwebtoken`).
 - Imports relativos; no hay alias de rutas.
 
+## Relación entre contextos
+
+Decisión propia de narfcar: es un monolito modular, un solo despliegue con cada contexto aislado.
+
+- Un contexto no importa el dominio de otro ni lee sus tablas.
+- Se comunican por eventos de dominio o por una query pública del otro contexto.
+- Entre contextos solo viajan identificadores y primitivos, nunca entidades.
+- Cada contexto es dueño de sus tablas, aunque compartan base de datos.
+- `shared/` contiene solo lo común de verdad: identificadores, `Money`, `TimeProvider`, `EventBus`.
+- La frontera de un contexto la marca el lenguaje: se separa cuando la misma palabra significa
+  otra cosa, no por tipo de dato.
+
 ## Dominio y orientación a objetos
 
 - **El comportamiento vive en la entidad.** El caso de uso no decide: `user.verifyNonce(...)`
