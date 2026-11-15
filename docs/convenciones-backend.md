@@ -16,9 +16,11 @@ src/<app>/
       repositories/<x>Repository.ts   interfaz
       interfaces/<puerto>.ts          resto de puertos de salida
       exceptions/<error>.ts
+      events/<hechoEnPasado>.ts       eventos de dominio
     application/
       commands/<verboSustantivo>.ts   escrituras, un caso de uso por fichero
       queries/<verboSustantivo>.ts    lecturas, un caso de uso por fichero
+      subscribers/<accion>On<Evento>.ts   reacciones a eventos de dominio
     infrastructure/
       <tecnologia><Puerto>.ts      adaptadores sueltos en la raíz de infrastructure/
       controllers/<casoDeUso>Controller.ts
@@ -109,6 +111,28 @@ Decisión propia de narfcar; no viene de enigmapp, donde los casos de uso no est
 - La creación de un agregado es un command; cada cambio posterior es otro command distinto. En la
   recepción: `OpenWorkOrder` crea la orden y cada paso siguiente es una mutación con su caso de uso.
 - Misma base de datos para escribir y leer, sin buses ni event sourcing, salvo que se decida otra cosa.
+
+## Eventos de dominio
+
+Decisión propia de narfcar; enigmapp no tiene eventos de dominio.
+
+- Los agregados extienden `AggregateRoot`, que ofrece `record(event)` y `pullDomainEvents()`.
+- Cada método que cambia el estado registra un evento. Los eventos viven en `domain/events/`, se
+  nombran en pasado (`PhotoAttached`, `WorkOrderOpened`), son inmutables y llevan el id del agregado,
+  el momento (del `TimeProvider`), el usuario y sus datos como primitivos.
+- **Al repositorio solo se le pasa el agregado:** `save(order)`. Nunca eventos.
+- El command guarda y después publica:
+  `await repository.save(order)` y `await eventBus.publish(order.pullDomainEvents())`.
+- `EventBus` es un puerto en `shared/domain`. La implementación es `InMemoryEventBus`: síncrona y
+  esperada con `await` antes de responder, porque en Vercel la función se congela al devolver la
+  respuesta. Sin broker externo.
+- Los suscriptores viven en `application/subscribers/` y se nombran `<Acción>On<Evento>`.
+- **El historial de un agregado es una proyección:** un suscriptor escribe cada evento en una tabla
+  de solo añadir, y se lee con una query. El agregado no guarda su historial.
+- No es event sourcing: el estado del agregado se guarda en sus tablas; los eventos son una salida.
+- Limitación asumida: guardar el agregado y proyectar el evento no son atómicos. Si un suscriptor
+  falla tras el guardado, falta esa entrada. Si llega a importar, se envuelve el command en una
+  transacción compartida con los suscriptores, que al ser síncronos lo permiten.
 
 ## Infraestructura
 
